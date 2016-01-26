@@ -1,0 +1,162 @@
+{% if share_viewer_button == 'meta_tags' %}
+{% comment %}<!-- STEP ONE - META TAGS -->{% endcomment %}
+{% if template contains 'product' %}
+<meta property="og:type" content="product">
+<meta property="og:title" content="{{ product.title | strip_html | escape }}">
+{% for image in product.images limit:3 %}
+<meta property="og:image" content="http:{{ image.src | img_url: 'grande' }}">
+<meta property="og:image:secure_url" content="https:{{ image.src | img_url: 'grande' }}">
+{% endfor %}
+<meta property="og:price:amount" content="{{ product.price | money_without_currency | strip_html | escape }}">
+<meta property="og:price:currency" content="{{ shop.currency }}">
+{% else %}
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ page_title | escape }}">
+<meta property="og:image" content="http:{{ 'logo.png' | asset_url }}">
+<meta property="og:image:secure_url" content="https:{{ 'logo.png' | asset_url }}">
+{% endif %}
+{% if page_description %}
+<meta property="og:description" content="{{ page_description | escape }}">
+{% endif %}
+<meta property="og:url" content="{{ canonical_url }}">
+<meta property="og:site_name" content="{{ shop.name | escape }}">
+{% elsif share_viewer_button == 'facebook_script' %}
+{% comment %}<!-- STEP TWO - FACEBOOK CODE FOR SHARE BUTTON -->{% endcomment %}
+{% if template contains 'product' %}
+{% assign item_pro_object = product %}
+{% else %}
+{% assign item_pro_object = page %}
+{% endif %}
+{% assign pro_share_type_temp = item_pro_object.metafields.b_share_viewer.b_share_viewer_value | strip %}
+{% assign b_heading_arr = pro_share_type_temp | strip | split:'###' %}
+<div id="fb-root"></div>
+<script>
+window.fbAsyncInit = function() {
+  FB.init({
+	appId      : '{{b_heading_arr[0]}}',
+	cookie     : true,  // enable cookies to allow the server to access 
+						// the session
+	xfbml      : true,  // parse social plugins on this page
+    status     : true,
+    oauth      : true,
+	version    : 'v2.2' // use version 2.2
+  });
+};
+	
+(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+{% elsif share_viewer_button == 'share_tracker' %}
+{% comment %}<!-- STEP THREE - MAIN HTML AND SHARE TRACK CODE -->{% endcomment %}
+{% if template contains 'product' %}
+{% assign item_pro_object = product %}
+{% else %}
+{% assign item_pro_object = page %}
+{% endif %}
+{% assign pro_share_type_temp = item_pro_object.metafields.b_share_viewer.b_share_viewer_value | strip %}
+{% if pro_share_type_temp != "" %}
+{% assign b_heading_arr = pro_share_type_temp | strip | split:'###' %}
+<style>
+.overlap-background {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+	width: 100%;
+	height: 9999999px;
+	background-color: #fefefe;
+    opacity: 0.8;
+    z-index: 999999;
+	display: none;
+}
+.button_container {
+    background-color: #f7f7f7;
+    border: 3px solid #fefefe;
+	position: fixed;
+	z-index: 9999999;
+	width: 100%;
+	top: 20%;
+	padding:20px;
+	text-align:center;
+	display: none;
+}
+  
+</style>
+<div class="overlap-background"></div>
+<div class="button_container">
+<h1>{{b_heading_arr[3]}}</h1>
+<h2>{{b_heading_arr[4]}}</h2>
+<a id="share_button" href="#"><img src="//shopiapps.io/shareviewer/front_assets/facebook-share-button.png" /></a></div>
+<script>  
+  if (typeof jQuery === 'undefined') {
+    document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" type="text/javascript"><\/script>');
+  }  
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js" type="text/javascript"></script>
+
+<script>
+var parts = window.location.pathname.split('/');
+var pageName = parts[parts.length -1];
+var baseName = 'shared_fb';
+var cookieName = baseName + '_' + pageName;
+if($.cookie(cookieName) == undefined){
+  
+  //http://graph.facebook.com/https://teststore1050.myshopify.com/products/product-21
+  
+  var shop_p_link = "{{ shop.permanent_domain }}";
+  var pid = "{{item_pro_object.id}}";
+    var bid = "{{b_heading_arr[2]}}";
+  var tracking_id = 0;
+  	  $.ajax({
+        type: 'POST',
+        url: '//shopiapps.io/shareviewer/share_tracking.php',
+        dataType: 'json',
+        data: { "pid": pid,"shop": shop_p_link, "type": "bounce", "bid":bid, "f_response":""},
+		success: function(data_new){
+			tracking_id = data_new.key;
+		},
+        error: function(jqXHR, textStatus, errorThrown){
+        }
+      });
+	  
+  
+  $(".overlap-background").show();
+  $(".button_container").show();
+  
+  $(document).on('click', '#share_button',function(e){
+    
+	e.preventDefault();
+    	FB.ui( {
+        method: 'feed',
+        link: window.location.href,
+    }, function( response ) {
+        if ( response !== null && typeof response.post_id !== 'undefined' ) {
+            console.log( response );
+            $.cookie(cookieName,"true");
+			$.ajax({
+				type: 'POST',
+				url: '//shopiapps.io/shareviewer/share_tracking.php',
+				dataType: 'json',
+              data: { "tracking_id":tracking_id,"pid": pid,"shop": shop_p_link, "type": "shared", "bid":bid, "f_response":JSON.stringify(response)},
+				success: function(data_new){
+				window.location.reload();
+				},
+				error: function(jqXHR, textStatus, errorThrown){
+				}
+			});
+          
+        }
+    } );
+  });
+}
+</script>
+{% endif %}
+{% else %}
+{{shareviewer_app}}
+{% endif %}

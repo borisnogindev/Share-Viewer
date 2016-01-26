@@ -1,0 +1,3 @@
+[24-Nov-2015 16:43:21 UTC] PHP Parse error:  syntax error, unexpected '$app_id' (T_VARIABLE) in /home/shopiapps/public_html/shareviewer/admin/settings.php on line 59
+[24-Nov-2015 16:44:28 UTC] PHP Parse error:  syntax error, unexpected '$app_id' (T_VARIABLE) in /home/shopiapps/public_html/shareviewer/admin/settings.php on line 59
+[24-Nov-2015 17:42:16 UTC] PHP Parse error:  syntax error, unexpected '$b_content' (T_VARIABLE) in /home/shopiapps/public_html/shareviewer/admin/ajax.php on line 55
